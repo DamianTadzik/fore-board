@@ -1,0 +1,3 @@
+[submodule "Libs/can-not"]
+	path = Libs/can-not
+	url = https://gitlab.com/agh-solar-boat/embedded-software-development/sbt-libs/can-not.git
