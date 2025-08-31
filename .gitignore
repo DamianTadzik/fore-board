@@ -1,0 +1,43 @@
+# STM32CubeIDE / Eclipse
+.apt_generated/
+.settings/
+.cproject
+.project
+.loadpath
+.externalToolBuilders/
+.sconsign.dblite
+
+# Build outputs
+Debug/
+Release/
+build/
+*.o
+*.d
+*.su
+*.elf
+*.map
+*.lst
+*.hex
+*.bin
+
+# STM32CubeIDE metadata
+.metadata/
+mxproject.xml
+.ioc-backup/
+*.launch
+
+# CubeMX generated backups / temp
+*.ioc-bak
+*.ioc-backup
+*.bak
+*.tmp
+
+# OS / editor junk
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
+
+# Generated docs / reports
+*.log
+*.ide.log
