@@ -25,6 +25,8 @@ build/
 mxproject.xml
 .ioc-backup/
 *.launch
+.mxproject
+
 
 # CubeMX generated backups / temp
 *.ioc-bak
