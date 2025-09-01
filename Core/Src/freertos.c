@@ -29,6 +29,7 @@
 
 #include "task_can_rx.h"
 #include "task_adc.h"
+#include "task_servo_control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,6 +59,13 @@ const osThreadAttr_t task_can_rx_attributes = {
 osThreadId_t task_adc_handle;
 const osThreadAttr_t task_adc_attributes = {
   .name = "task_adc",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
+osThreadId_t task_servo_control_handle;
+const osThreadAttr_t task_servo_control_attributes = {
+  .name = "task_servo_control",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
@@ -135,6 +143,9 @@ void MX_FREERTOS_Init(void) {
   res = xPortGetFreeHeapSize();
 
   task_adc_handle = osThreadNew(task_adc, NULL, &task_adc_attributes);
+  res = xPortGetFreeHeapSize();
+
+  task_servo_control_handle = osThreadNew(task_servo_control, NULL, &task_servo_control_attributes);
   res = xPortGetFreeHeapSize();
 
 
