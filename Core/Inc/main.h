@@ -63,6 +63,7 @@ void Error_Handler(void);
 #define GPIO_KEY_GPIO_Port GPIOA
 #define EXTI_VL_2_Pin GPIO_PIN_0
 #define EXTI_VL_2_GPIO_Port GPIOB
+#define EXTI_VL_2_EXTI_IRQn EXTI0_IRQn
 #define GPIO_SHDN_VL_2_Pin GPIO_PIN_1
 #define GPIO_SHDN_VL_2_GPIO_Port GPIOB
 #define EXTI_INA_2_Pin GPIO_PIN_12
@@ -73,6 +74,7 @@ void Error_Handler(void);
 #define EXTI_INA_1_EXTI_IRQn EXTI3_IRQn
 #define EXTI_VL_1_Pin GPIO_PIN_4
 #define EXTI_VL_1_GPIO_Port GPIOB
+#define EXTI_VL_1_EXTI_IRQn EXTI4_IRQn
 #define GPIO_SHDN_VL_1_Pin GPIO_PIN_5
 #define GPIO_SHDN_VL_1_GPIO_Port GPIOB
 

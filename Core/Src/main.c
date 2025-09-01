@@ -32,6 +32,11 @@
 
 #include "can-not/can_not.h"
 
+#include "i2c_bus_guard.h"
+
+#include "task_range_meas.h"
+#include "task_servo_power_monitor.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -105,7 +110,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   fore_board_init();
   cant_main_init();
-
+  i2c_mutexes_init();
 
   uint32_t startup_counter = 0;
   HAL_GPIO_WritePin(GPIO_LED_GPIO_Port, GPIO_LED_Pin, GPIO_PIN_RESET);
@@ -191,7 +196,11 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	exti_task_range_meas_callback(GPIO_Pin);
+	exti_task_servo_power_monitor_callback(GPIO_Pin);
+}
 /* USER CODE END 4 */
 
 /**

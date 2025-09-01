@@ -13,6 +13,7 @@
 //#include "canmsgs
 
 
+extern volatile uint32_t task_can_rx_alive;
 void task_can_rx(void *argument)
 {
 	fore_board_t* fb_ptr = fore_board_get_ptr();
@@ -26,6 +27,7 @@ void task_can_rx(void *argument)
 			int x = 0;
 			UNUSED(x);
 		}
+		task_can_rx_alive++;
 		osThreadYield();	//<- preffered no delay inside this task loop in freeRTOS
 	}
 }

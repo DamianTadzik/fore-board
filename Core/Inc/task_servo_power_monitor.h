@@ -32,6 +32,8 @@ typedef struct {
     osMutexId_t        i2c_mutex;
 } servo_ina_t;
 
+void exti_task_servo_power_monitor_callback(uint16_t GPIO_Pin);
+
 void task_servo_power_monitor(void *argument);
 
 #endif /* INC_TASK_SERVO_POWER_MONITOR_H_ */

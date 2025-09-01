@@ -31,6 +31,7 @@
 #include "task_adc.h"
 #include "task_servo_control.h"
 #include "task_servo_power_monitor.h"
+#include "task_range_meas.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -75,6 +76,13 @@ osThreadId_t task_servo_power_monitor_handle;
 const osThreadAttr_t task_servo_power_monitor_attributes = {
   .name = "task_servo_power_monitor",
   .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
+osThreadId_t task_range_meas_handle;
+const osThreadAttr_t task_range_meas_attributes = {
+  .name = "task_range_meas",
+  .stack_size = 128 * 8,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -158,6 +166,9 @@ void MX_FREERTOS_Init(void) {
   task_servo_power_monitor_handle = osThreadNew(task_servo_power_monitor, NULL, &task_servo_power_monitor_attributes);
   res = xPortGetFreeHeapSize();
 
+  task_range_meas_handle = osThreadNew(task_range_meas, NULL, &task_range_meas_attributes);
+  res = xPortGetFreeHeapSize();
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -172,6 +183,20 @@ void MX_FREERTOS_Init(void) {
   * @param  argument: Not used
   * @retval None
   */
+
+
+volatile uint32_t task_can_rx_alive;
+volatile uint32_t task_adc_alive;
+volatile uint32_t task_servo_control_alive;
+volatile uint32_t task_servo_power_monitor_alive;
+volatile uint32_t task_range_meas_alive;
+
+volatile UBaseType_t task_can_rx_high_watermark;
+volatile UBaseType_t task_adc_high_watermark;
+volatile UBaseType_t task_servo_control_high_watermark;
+volatile UBaseType_t task_servo_power_monitor_high_watermark;
+volatile UBaseType_t task_range_meas_high_watermark;
+
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
@@ -180,6 +205,13 @@ void StartDefaultTask(void *argument)
   for(;;)
   {
 	  HAL_GPIO_TogglePin(GPIO_LED_GPIO_Port, GPIO_LED_Pin);
+
+	  task_can_rx_high_watermark           = uxTaskGetStackHighWaterMark((TaskHandle_t)task_can_rx_handle);
+	  task_adc_high_watermark              = uxTaskGetStackHighWaterMark((TaskHandle_t)task_adc_handle);
+	  task_servo_control_high_watermark    = uxTaskGetStackHighWaterMark((TaskHandle_t)task_servo_control_handle);
+	  task_servo_power_monitor_high_watermark = uxTaskGetStackHighWaterMark((TaskHandle_t)task_servo_power_monitor_handle);
+	  task_range_meas_high_watermark       = uxTaskGetStackHighWaterMark((TaskHandle_t)task_range_meas_handle);
+
 	  osDelay(200);
   }
   /* USER CODE END StartDefaultTask */

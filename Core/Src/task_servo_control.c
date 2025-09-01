@@ -81,7 +81,7 @@ static inline void stop_servo(servo_actuators_t* hact)
 
 static uint32_t actuators_range_identification(void);
 
-
+extern volatile uint32_t task_servo_control_alive;
 void task_servo_control(void* argument)
 {
 	fore_board_t* fb_ptr = fore_board_get_ptr();
@@ -146,6 +146,7 @@ void task_servo_control(void* argument)
 		}
 		actuators.prev_state = actuators.state;
 
+		task_servo_control_alive++;
 		osDelay(10);
 	}
 }

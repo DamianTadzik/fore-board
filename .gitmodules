@@ -1,3 +1,6 @@
 [submodule "Libs/can-not"]
 	path = Libs/can-not
 	url = https://gitlab.com/agh-solar-boat/embedded-software-development/sbt-libs/can-not.git
+[submodule "Libs/VL6180"]
+	path = Libs/VL6180
+	url = https://github.com/DamianTadzik/vl1680.git

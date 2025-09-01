@@ -11,14 +11,12 @@
 #include "fore_board.h"
 
 #include "i2c.h"
+#include "i2c_bus_guard.h"
 #include "INA226/driver_ina226.h"
 
 /* --- Lokalne singletons dla taska --- */
 static servo_ina_t  g_ina1, g_ina2;
 static osThreadId_t g_powerTaskTid;
-
-/* Mutexy per-magistrala (na przyszłość, gdy dołożysz kolejne I2C slave’y) */
-static osMutexId_t  i2c1_mx, i2c2_mx;
 
 /*
  * Inicjalizacja jednego sensora:
@@ -80,8 +78,7 @@ static int ina_setup_one(servo_ina_t *n,
     return 0;
 }
 
-/* ISR od EXTI – ustaw flagi dla taska */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+void exti_task_servo_power_monitor_callback(uint16_t GPIO_Pin)
 {
     uint32_t flags = 0;
     if (GPIO_Pin == g_ina1.alert_pin) flags |= g_ina1.flag_bit;
@@ -90,21 +87,17 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     if (flags && g_powerTaskTid) osThreadFlagsSet(g_powerTaskTid, flags);
 }
 
-
+extern volatile uint32_t task_servo_power_monitor_alive;
 void task_servo_power_monitor(void *argument)
 {
 	fore_board_t* fb_ptr = fore_board_get_ptr();
 	g_powerTaskTid = osThreadGetId();
 
-    /* Mutexy per-bus */
-    i2c1_mx = osMutexNew(NULL);
-    i2c2_mx = osMutexNew(NULL);
-
     /* INIT dwóch czujników
        - podstaw Swoje piny EXTI oraz faktyczne adresy A0/A1:
          UWAGA: enumy adresów w driverze są JUŻ przesunięte <<1, zgodne z HALem! */
-    int r1 = ina_setup_one(&g_ina1, &hi2c1, i2c1_mx, INA226_ADDRESS_0, EXTI_INA_1_GPIO_Port, EXTI_INA_1_Pin, INA1_FLAG);
-    int r2 = ina_setup_one(&g_ina2, &hi2c2, i2c2_mx, INA226_ADDRESS_0, EXTI_INA_2_GPIO_Port, EXTI_INA_2_Pin, INA2_FLAG);
+    int r1 = ina_setup_one(&g_ina1, &hi2c1, i2c1_mutex_get(), INA226_ADDRESS_0, EXTI_INA_1_GPIO_Port, EXTI_INA_1_Pin, INA1_FLAG);
+    int r2 = ina_setup_one(&g_ina2, &hi2c2, i2c2_mutex_get(), INA226_ADDRESS_0, EXTI_INA_2_GPIO_Port, EXTI_INA_2_Pin, INA2_FLAG);
     UNUSED(r1);
     UNUSED(r2);
 
@@ -151,5 +144,7 @@ void task_servo_power_monitor(void *argument)
         }
 
         /* opcjonalnie: gdy timeout – możesz zrobić sanity poll raz na jakiś czas */
+
+        task_servo_power_monitor_alive++;
 	}
 }

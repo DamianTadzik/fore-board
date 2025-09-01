@@ -60,6 +60,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     }
 }
 
+extern volatile uint32_t task_adc_alive;
 void task_adc(void *argument)
 {
 	fore_board_t* fb_ptr = fore_board_get_ptr();
@@ -103,5 +104,7 @@ void task_adc(void *argument)
 		/* Save what necessary in the fore_board_t structure */
 		fb_ptr->left_servo_feedback.voltage  = s_voltages[channel_1];
 		fb_ptr->right_servo_feedback.voltage = s_voltages[channel_4];
+
+		task_adc_alive++;
 	}
 }
