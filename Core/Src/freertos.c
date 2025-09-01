@@ -28,6 +28,7 @@
 #include "can-not/can_not.h"
 
 #include "task_can_rx.h"
+#include "task_adc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,6 +54,14 @@ const osThreadAttr_t task_can_rx_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+
+osThreadId_t task_adc_handle;
+const osThreadAttr_t task_adc_attributes = {
+  .name = "task_adc",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
 
 
 /* USER CODE END Variables */
@@ -122,8 +131,13 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   res = xPortGetFreeHeapSize();
 
-  task_can_rx_handle = osThreadNew(task_can_rx_handle, NULL, &task_can_rx_attributes);
+  task_can_rx_handle = osThreadNew(task_can_rx, NULL, &task_can_rx_attributes);
   res = xPortGetFreeHeapSize();
+
+  task_adc_handle = osThreadNew(task_adc, NULL, &task_adc_attributes);
+  res = xPortGetFreeHeapSize();
+
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -145,7 +159,8 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  HAL_GPIO_TogglePin(GPIO_LED_GPIO_Port, GPIO_LED_Pin);
+	  osDelay(200);
   }
   /* USER CODE END StartDefaultTask */
 }

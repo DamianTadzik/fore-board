@@ -28,7 +28,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "fore_board.h"
+
 #include "can-not/can_not.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -100,7 +103,26 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  fore_board_init();
   cant_main_init();
+
+
+  uint32_t startup_counter = 0;
+  HAL_GPIO_WritePin(GPIO_LED_GPIO_Port, GPIO_LED_Pin, GPIO_PIN_RESET);
+  while (HAL_GPIO_ReadPin(GPIO_KEY_GPIO_Port, GPIO_KEY_Pin) == GPIO_PIN_RESET)
+  {
+	  /* Increase counter each milisecond */
+	  startup_counter++;
+	  HAL_Delay(1);
+
+	  /* Toggle led each 500 ms so the whole period is one second */
+	  if (startup_counter%500 == 0) HAL_GPIO_TogglePin(GPIO_LED_GPIO_Port, GPIO_LED_Pin);
+
+	  if (startup_counter > 3000)
+	  {
+		  /* Special mode can be entered here */
+	  }
+  }
 
   /* USER CODE END 2 */
 
