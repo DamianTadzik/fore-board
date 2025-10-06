@@ -4,3 +4,6 @@
 [submodule "Libs/VL6180"]
 	path = Libs/VL6180
 	url = https://github.com/DamianTadzik/vl1680.git
+[submodule "Libs/can-messages-mini-celka"]
+	path = Libs/can-messages-mini-celka
+	url = https://github.com/DamianTadzik/can-messages-mini-celka.git
