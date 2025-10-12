@@ -82,6 +82,8 @@ void task_range_meas(void *argument)
             VL6180_RangeClearInterrupt(&tof1);
 
             fb_ptr->left_tof.range_mm = d.range_mm;
+            fb_ptr->left_tof.signalRate_mcps = d.signalRate_mcps;
+            fb_ptr->left_tof.errorStatus = d.errorStatus;
         }
 
         if (f & TOF2_FLAG) {
@@ -89,10 +91,11 @@ void task_range_meas(void *argument)
             VL6180_RangeClearInterrupt(&tof2);
 
             fb_ptr->right_tof.range_mm = d.range_mm;
+            fb_ptr->right_tof.signalRate_mcps = d.signalRate_mcps;
+			fb_ptr->right_tof.errorStatus = d.errorStatus;
         }
 
         // można też w timeout zrobić sanity poll: VL6180_RangeGetMeasurementIfReady(...)
-
         task_range_meas_alive++;
 	}
 }

@@ -60,7 +60,9 @@ actuator_t left_foil_actuator = {
 // The upper arm is 18.8 the lower arm is 25 mm
 // So the (25/18,8) * 18 = 23.936 is the movement of the upper arm?
 // from onshape 17,343 + 6,643 = 23.986 degrees of servo motion
-// so 24 degrees of motion is like 240 us of control
+// so 24 degrees of motion is like 240 us of control signal
+
+// so 1 degree of foil movement is like 25/18.8 = 1.33 degrees of servo movement which is 13us
 
 static inline int16_t clamp_i16(int16_t x, int16_t lb, int16_t ub)
 {
@@ -113,7 +115,7 @@ static void actuator_disable(actuator_t *hact)
     }
 }
 
-static uint32_t actuators_range_identification(void);
+//static uint32_t actuators_range_identification(void);
 
 extern volatile uint32_t task_servo_control_alive;
 void task_servo_control(void* argument)
@@ -127,13 +129,12 @@ void task_servo_control(void* argument)
 		int16_t roll  = fb_ptr->from_radio.front_roll_sp;
 		int16_t pitch = fb_ptr->from_radio.front_pitch_sp;
 
-		// Wzmocnienia (skala w promilach dla łatwego tuningu, 1000 = 1.0)
+		// Wzmocnienia
 		int16_t gain_pitch = 1000;
 		int16_t gain_roll  = 1000;
 
 		// left = pitch + roll
 		// right = pitch - roll
-		// wynik w tysiącach => dzielimy przez 1000 aby wrócić do skali [-1000,1000]
 		int16_t left_cmd  = (gain_pitch * pitch + gain_roll * roll) / 1000;
 		int16_t right_cmd = (gain_pitch * pitch - gain_roll * roll) / 1000;
 
@@ -144,7 +145,6 @@ void task_servo_control(void* argument)
 		else if (right_cmd < -1000) right_cmd = -1000;
 
 		// bazowanie
-
 		int16_t left_sp = map_i16(left_cmd, -1000, 1000, 1440, 1680);
 		int16_t right_sp = map_i16(-right_cmd, -1000, 1000, 1330, 1610);
 
@@ -208,7 +208,6 @@ void task_servo_control(void* argument)
 		osDelay(10);
 	}
 }
-
 
 //static uint32_t actuators_range_identification(void)
 //{
