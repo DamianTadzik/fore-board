@@ -111,6 +111,7 @@ int main(void)
   fore_board_init();
   cant_main_init();
   i2c_mutexes_init();
+  HAL_TIM_Base_Start(&htim1);
 
   uint32_t startup_counter = 0;
   HAL_GPIO_WritePin(GPIO_LED_GPIO_Port, GPIO_LED_Pin, GPIO_PIN_RESET);

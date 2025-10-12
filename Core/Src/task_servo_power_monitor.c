@@ -123,8 +123,9 @@ void task_servo_power_monitor(void *argument)
             (void)ina226_read_power(&g_ina1.drv, &pwr_raw, &pwr_mW);
 
 
-            fb_ptr->left_servo_power.current = ish_mA;
-            fb_ptr->left_servo_power.voltage = vbus_mV;
+            fb_ptr->left_servo_power.current = ish_mA/1000;
+            fb_ptr->left_servo_power.voltage = vbus_mV/1000;
+            fb_ptr->left_servo_power.power = pwr_mW/1000;
         }
 
         if (flags & INA2_FLAG)
@@ -139,8 +140,9 @@ void task_servo_power_monitor(void *argument)
             (void)ina226_read_current(&g_ina2.drv, &ish_raw, &ish_mA);
             (void)ina226_read_power(&g_ina2.drv, &pwr_raw, &pwr_mW);
 
-            fb_ptr->right_servo_power.current = ish_mA;
-            fb_ptr->right_servo_power.voltage = vbus_mV;
+            fb_ptr->right_servo_power.current = ish_mA/1000;
+            fb_ptr->right_servo_power.voltage = vbus_mV/1000;
+            fb_ptr->right_servo_power.power = pwr_mW/1000;
         }
 
         /* opcjonalnie: gdy timeout – możesz zrobić sanity poll raz na jakiś czas */

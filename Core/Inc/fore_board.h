@@ -10,21 +10,47 @@
 
 #include "main.h"
 
+typedef enum {
+	DISARMED,
+	ARMED_STEERING_PROPULSION,
+	ARMED_ALL,
+} arm_switch_t;
+
+typedef enum {
+	To,
+	Be,
+	Done,
+} mode_switch_t;
+
 typedef struct {
-	float angle;	// This is obtained via CAN interface
-} control_request_t;
+	int16_t throttle;
+	int16_t steering;
+
+	int16_t front_pitch_sp;
+	int16_t front_roll_sp;
+	int16_t rear_pitch_sp;
+
+	arm_switch_t arm_switch;
+	mode_switch_t mode_switch;
+} radio_controls_t;
 
 typedef struct {
 	float voltage;
+	uint16_t raw_adc;
+	int16_t setpoint_us;
+	uint8_t mode;
 } servo_feedback_t;
 
 typedef struct {
 	uint8_t range_mm;
+	int32_t signalRate_mcps;
+	uint8_t errorStatus;
 } range_meas_t;
 
 typedef struct {
     float voltage;
     float current;
+    float power;
 } servo_power_data_t;
 
 typedef struct {
@@ -36,6 +62,8 @@ typedef struct {
 
 	range_meas_t left_tof;
 	range_meas_t right_tof;
+
+	radio_controls_t from_radio;
 } fore_board_t;
 
 void fore_board_init(void);
