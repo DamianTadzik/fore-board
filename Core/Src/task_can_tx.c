@@ -15,16 +15,16 @@
 static void send_distance_fore_feedback(fore_board_t* fb_ptr)
 {
 	struct cmmc_distance_fore_feedback_t tmp = {
-			.range_mm_l = cmmc_distance_achter_feedback_range_mm_l_encode(fb_ptr->left_tof.range_mm),
+			.range_mm_l = cmmc_distance_fore_feedback_range_mm_l_encode(fb_ptr->left_tof.range_mm),
 			.signal_rate_mcps_l = fb_ptr->left_tof.signalRate_mcps,	// do not use encode here
-			.error_status_l = cmmc_distance_achter_feedback_error_status_l_encode(fb_ptr->left_tof.errorStatus),
-			.range_mm_r = cmmc_distance_achter_feedback_range_mm_r_encode(fb_ptr->right_tof.range_mm),
+			.error_status_l = cmmc_distance_fore_feedback_error_status_l_encode(fb_ptr->left_tof.errorStatus),
+			.range_mm_r = cmmc_distance_fore_feedback_range_mm_r_encode(fb_ptr->right_tof.range_mm),
 			.signal_rate_mcps_r = fb_ptr->right_tof.signalRate_mcps, // do not use encode here
-			.error_status_r = cmmc_distance_achter_feedback_error_status_r_encode(fb_ptr->right_tof.errorStatus),
+			.error_status_r = cmmc_distance_fore_feedback_error_status_r_encode(fb_ptr->right_tof.errorStatus),
 	};
 	cant_generic_struct_t msg = {
-			.msg_dlc	= CMMC_DISTANCE_ACHTER_FEEDBACK_LENGTH,
-			.msg_id		= CMMC_DISTANCE_ACHTER_FEEDBACK_FRAME_ID,
+			.msg_dlc	= CMMC_DISTANCE_FORE_FEEDBACK_LENGTH,
+			.msg_id		= CMMC_DISTANCE_FORE_FEEDBACK_FRAME_ID,
 			.msg_payload = { 0U },
 	};
 	cmmc_distance_fore_feedback_pack(msg.msg_payload, &tmp, msg.msg_dlc);

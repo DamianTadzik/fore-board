@@ -28,6 +28,7 @@
 #include "can-not/can_not.h"
 
 #include "task_can_rx.h"
+#include "task_can_tx.h"
 #include "task_adc.h"
 #include "task_servo_control.h"
 #include "task_servo_power_monitor.h"
@@ -58,17 +59,24 @@ const osThreadAttr_t task_can_rx_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 
+osThreadId_t task_can_tx_handle;
+const osThreadAttr_t task_can_tx_attributes = {
+  .name = "task_can_tx",
+  .stack_size = 64 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
 osThreadId_t task_adc_handle;
 const osThreadAttr_t task_adc_attributes = {
   .name = "task_adc",
-  .stack_size = 128 * 4,
+  .stack_size = 96 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
 osThreadId_t task_servo_control_handle;
 const osThreadAttr_t task_servo_control_attributes = {
   .name = "task_servo_control",
-  .stack_size = 128 * 4,
+  .stack_size = 64 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -82,7 +90,7 @@ const osThreadAttr_t task_servo_power_monitor_attributes = {
 osThreadId_t task_range_meas_handle;
 const osThreadAttr_t task_range_meas_attributes = {
   .name = "task_range_meas",
-  .stack_size = 128 * 8,
+  .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -124,7 +132,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-	size_t res = xPortGetFreeHeapSize();
+	volatile size_t res = xPortGetFreeHeapSize();
 	UNUSED(res);
 
 	cant_freertos_init();
@@ -157,6 +165,9 @@ void MX_FREERTOS_Init(void) {
   task_can_rx_handle = osThreadNew(task_can_rx, NULL, &task_can_rx_attributes);
   res = xPortGetFreeHeapSize();
 
+  task_can_tx_handle = osThreadNew(task_can_tx, NULL, &task_can_tx_attributes);
+  res = xPortGetFreeHeapSize();
+
   task_adc_handle = osThreadNew(task_adc, NULL, &task_adc_attributes);
   res = xPortGetFreeHeapSize();
 
@@ -186,12 +197,14 @@ void MX_FREERTOS_Init(void) {
 
 
 volatile uint32_t task_can_rx_alive;
+volatile uint32_t task_can_tx_alive;
 volatile uint32_t task_adc_alive;
 volatile uint32_t task_servo_control_alive;
 volatile uint32_t task_servo_power_monitor_alive;
 volatile uint32_t task_range_meas_alive;
 
 volatile UBaseType_t task_can_rx_high_watermark;
+volatile UBaseType_t task_can_tx_high_watermark;
 volatile UBaseType_t task_adc_high_watermark;
 volatile UBaseType_t task_servo_control_high_watermark;
 volatile UBaseType_t task_servo_power_monitor_high_watermark;
@@ -207,6 +220,7 @@ void StartDefaultTask(void *argument)
 	  HAL_GPIO_TogglePin(GPIO_LED_GPIO_Port, GPIO_LED_Pin);
 
 	  task_can_rx_high_watermark           = uxTaskGetStackHighWaterMark((TaskHandle_t)task_can_rx_handle);
+	  task_can_tx_high_watermark			= uxTaskGetStackHighWaterMark((TaskHandle_t)task_can_tx_handle);
 	  task_adc_high_watermark              = uxTaskGetStackHighWaterMark((TaskHandle_t)task_adc_handle);
 	  task_servo_control_high_watermark    = uxTaskGetStackHighWaterMark((TaskHandle_t)task_servo_control_handle);
 	  task_servo_power_monitor_high_watermark = uxTaskGetStackHighWaterMark((TaskHandle_t)task_servo_power_monitor_handle);
