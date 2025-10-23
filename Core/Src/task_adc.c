@@ -15,13 +15,13 @@
 typedef enum {
 	channel_1 = 0,
 	channel_4,
-	channel_Temperature_Sensor,
-	channel_Vrefint,
+//	channel_Temperature_Sensor,
+//	channel_Vrefint,
 
 	ADC_NUMBER_OF_CHANNELS,
 } ADC_channels_t;
 
-#define ADC_N_SAMPLES 8
+#define ADC_N_SAMPLES 16
 #define ADC_READY_FLAG 0x01
 
 /* Array for storing ADC results */
@@ -32,12 +32,12 @@ static uint8_t s_sample_idx = 0;
 /* Voltage results calculated from ADC results */
 static volatile float s_voltages[ADC_NUMBER_OF_CHANNELS];
 /* Dynamically calculated VDD value */
-static volatile float VDD = 0.0;
-static float TEMPERATURE = 0.0;
+static volatile float VDD = 3.3;
+//static float TEMPERATURE = 0.0;
 
 ///* Various numbers used for calculations */
 static const uint16_t ADC_resolution = 4096 - 1;	// 12 bit
-static const float VREFINT = 1.2f;
+//static const float VREFINT = 1.2f;
 
 /* This task id holder */
 static osThreadId_t s_thisTask = NULL;
@@ -73,6 +73,7 @@ void task_adc(void *argument)
 	/* ADC calibration */
 	HAL_StatusTypeDef status = 0;
 	status = HAL_ADCEx_Calibration_Start(&hadc1);
+	osDelay(100);
 
 	/* Start of the ADC and timer */
 	status = HAL_ADC_Start_DMA(&hadc1, (uint32_t*)s_adc_dma_buf, ADC_NUMBER_OF_CHANNELS);
@@ -88,18 +89,18 @@ void task_adc(void *argument)
 		uint32_t sum[ADC_NUMBER_OF_CHANNELS] = {0};
 		for (uint8_t ch = 0; ch < ADC_NUMBER_OF_CHANNELS; ch++)
 		{
-		    for (uint8_t i = 0; i < ADC_N_SAMPLES; i++) sum[ch] += s_samples[ch][i];
+		    for (uint8_t i = 0; i < ADC_N_SAMPLES; i++) sum[ch] += (uint32_t)s_samples[ch][i];
 		}
 		uint16_t avg[ADC_NUMBER_OF_CHANNELS];
 		for (uint8_t ch = 0; ch < ADC_NUMBER_OF_CHANNELS; ch++) avg[ch] = sum[ch] / ADC_N_SAMPLES;
 
 		/* Calculate the physical voltages */
-		VDD = VREFINT * ADC_resolution / avg[channel_Vrefint];
+//		VDD = VREFINT * ADC_resolution / avg[channel_Vrefint];
 		for (uint8_t ch = 0; ch < ADC_NUMBER_OF_CHANNELS; ch++)
 		{
 			s_voltages[ch] = VDD * avg[ch] / ADC_resolution;
 		}
-		TEMPERATURE = 25.0f + (s_voltages[channel_Temperature_Sensor] - 1.43f) / 0.0043f;
+//		TEMPERATURE = 25.0f + (s_voltages[channel_Temperature_Sensor] - 1.43f) / 0.0043f;
 
 		/* Save what necessary in the fore_board_t structure */
 		fb_ptr->left_servo_feedback.voltage = s_voltages[channel_4];
