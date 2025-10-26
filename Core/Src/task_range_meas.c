@@ -35,7 +35,8 @@ void task_range_meas(void *argument)
 
 	HAL_GPIO_WritePin(GPIO_SHDN_VL_1_GPIO_Port, GPIO_SHDN_VL_1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIO_SHDN_VL_2_GPIO_Port, GPIO_SHDN_VL_2_Pin, GPIO_PIN_RESET);
-	int status = 0;
+	osDelay(80);
+	volatile int status = 0;
 
     // --- instancja #1 (I2C1) ---
     tof1.hi2c = &hi2c1;
@@ -46,8 +47,16 @@ void task_range_meas(void *argument)
 //    VL6180_WaitDeviceBooted(&tof1);
     status |= VL6180_InitData(&tof1);
     status |= VL6180_Prepare(&tof1);
+
+    status |= VL6180_SetGroupParamHold(&tof1, 1);               // Hold params
+    status |= VL6180_SetXTalkCompensationRate(&tof1, 5);	// 0.038 * 128 = ~5
+    status |= VL6180_SetOffsetCalibrationData(&tof1, +18);
+    status |= VL6180_UpscaleSetScaling(&tof1, 2);               // Set scaling x (1–3)
+    status |= VL6180_RangeSetMaxConvergenceTime(&tof1, 40);     // 50 recommended for x3
+    status |= VL6180_SetGroupParamHold(&tof1, 0);               // Release hold
+
     status |= VL6180_RangeSetInterMeasPeriod(&tof1, 100);
-    status |= VL6180_FilterSetState(&tof1, 0);
+//    status |= VL6180_FilterSetState(&tof1, 0); // -3 NOT_SUPPORTED
     status |= VL6180_SetupGPIO1(&tof1, GPIOx_SELECT_GPIO_INTERRUPT_OUTPUT, INTR_POL_LOW);
     status |= VL6180_RangeConfigInterrupt(&tof1, CONFIG_GPIO_INTERRUPT_NEW_SAMPLE_READY);
     status |= VL6180_ClearAllInterrupt(&tof1);
@@ -63,8 +72,16 @@ void task_range_meas(void *argument)
 //    VL6180_WaitDeviceBooted(&tof2);
     status |= VL6180_InitData(&tof2);
     status |= VL6180_Prepare(&tof2);
+
+    status |= VL6180_SetGroupParamHold(&tof2, 1);               // Hold params
+    status |= VL6180_SetXTalkCompensationRate(&tof2, 4);	// 0.031 * 128 = ~4
+    status |= VL6180_SetOffsetCalibrationData(&tof2, +7);
+    status |= VL6180_UpscaleSetScaling(&tof2, 2);               // Set scaling x (1–3)
+    status |= VL6180_RangeSetMaxConvergenceTime(&tof2, 40);     // 50 recommended for x3
+    status |= VL6180_SetGroupParamHold(&tof2, 0);               // Release hold
+
     status |= VL6180_RangeSetInterMeasPeriod(&tof2, 100);
-    status |= VL6180_FilterSetState(&tof2, 0);
+//    status |= VL6180_FilterSetState(&tof2, 0); // -3 NOT_SUPPORTED
     status |= VL6180_SetupGPIO1(&tof2, GPIOx_SELECT_GPIO_INTERRUPT_OUTPUT, INTR_POL_LOW);
     status |= VL6180_RangeConfigInterrupt(&tof2, CONFIG_GPIO_INTERRUPT_NEW_SAMPLE_READY);
     status |= VL6180_ClearAllInterrupt(&tof2);
