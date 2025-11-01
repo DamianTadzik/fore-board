@@ -33,6 +33,8 @@
 #include "task_servo_control.h"
 #include "task_servo_power_monitor.h"
 #include "task_range_meas.h"
+#include "task_imu.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,7 +57,7 @@
 osThreadId_t task_can_rx_handle;
 const osThreadAttr_t task_can_rx_attributes = {
   .name = "task_can_rx",
-  .stack_size = 128 * 4,
+  .stack_size = 64 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -93,6 +95,14 @@ const osThreadAttr_t task_range_meas_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+
+osThreadId_t task_imu_handle;
+const osThreadAttr_t task_imu_attributes = {
+  .name = "task_imu",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
 
 
 /* USER CODE END Variables */
@@ -180,6 +190,10 @@ void MX_FREERTOS_Init(void) {
   task_range_meas_handle = osThreadNew(task_range_meas, NULL, &task_range_meas_attributes);
   res = xPortGetFreeHeapSize();
 
+  task_imu_handle = osThreadNew(task_imu, NULL, &task_imu_attributes);
+  res = xPortGetFreeHeapSize();
+
+  UNUSED(res);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -202,6 +216,7 @@ volatile uint32_t task_adc_alive;
 volatile uint32_t task_servo_control_alive;
 volatile uint32_t task_servo_power_monitor_alive;
 volatile uint32_t task_range_meas_alive;
+volatile uint32_t task_imu_alive;
 
 volatile UBaseType_t task_can_rx_high_watermark;
 volatile UBaseType_t task_can_tx_high_watermark;
@@ -209,6 +224,7 @@ volatile UBaseType_t task_adc_high_watermark;
 volatile UBaseType_t task_servo_control_high_watermark;
 volatile UBaseType_t task_servo_power_monitor_high_watermark;
 volatile UBaseType_t task_range_meas_high_watermark;
+volatile UBaseType_t task_imu_high_watermark;
 
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
@@ -219,12 +235,13 @@ void StartDefaultTask(void *argument)
   {
 	  HAL_GPIO_TogglePin(GPIO_LED_GPIO_Port, GPIO_LED_Pin);
 
-	  task_can_rx_high_watermark           = uxTaskGetStackHighWaterMark((TaskHandle_t)task_can_rx_handle);
-	  task_can_tx_high_watermark			= uxTaskGetStackHighWaterMark((TaskHandle_t)task_can_tx_handle);
-	  task_adc_high_watermark              = uxTaskGetStackHighWaterMark((TaskHandle_t)task_adc_handle);
-	  task_servo_control_high_watermark    = uxTaskGetStackHighWaterMark((TaskHandle_t)task_servo_control_handle);
+	  task_can_rx_high_watermark        = uxTaskGetStackHighWaterMark((TaskHandle_t)task_can_rx_handle);
+	  task_can_tx_high_watermark		= uxTaskGetStackHighWaterMark((TaskHandle_t)task_can_tx_handle);
+	  task_adc_high_watermark           = uxTaskGetStackHighWaterMark((TaskHandle_t)task_adc_handle);
+	  task_servo_control_high_watermark = uxTaskGetStackHighWaterMark((TaskHandle_t)task_servo_control_handle);
 	  task_servo_power_monitor_high_watermark = uxTaskGetStackHighWaterMark((TaskHandle_t)task_servo_power_monitor_handle);
-	  task_range_meas_high_watermark       = uxTaskGetStackHighWaterMark((TaskHandle_t)task_range_meas_handle);
+	  task_range_meas_high_watermark    = uxTaskGetStackHighWaterMark((TaskHandle_t)task_range_meas_handle);
+	  task_imu_high_watermark       	= uxTaskGetStackHighWaterMark((TaskHandle_t)task_imu_handle);
 
 	  osDelay(200);
   }
