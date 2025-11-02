@@ -18,31 +18,39 @@
 // konfiguracja twoich pinów
 #define BNO_CS_PORT   GPIOA
 #define BNO_CS_PIN    GPIO_PIN_12
-#define BNO_RST_PORT  GPIOB
+#define BNO_RST_PORT  GPIOA
 #define BNO_RST_PIN   GPIO_PIN_11
-#define BNO_INT_PORT  GPIOB
+#define BNO_INT_PORT  GPIOA
 #define BNO_INT_PIN   GPIO_PIN_15
+
+// Debug only
+volatile imu_debug_t imu_dbg = {0};
 
 // uchwyt do semafora z EXTI
 extern osSemaphoreId_t imuIntSem;
+
 // Exported
-void exti_task_imu_callback(uint16_t GPIO_Pin) {
+void exti_task_imu_callback(uint16_t GPIO_Pin)
+{
     if (GPIO_Pin == BNO_INT_PIN) {
-        osSemaphoreRelease(imuIntSem);
+        imu_dbg.exti_trig++;
+
+        // Spi recieve 4 bytes
     }
 }
 
+
+
 extern SPI_HandleTypeDef hspi1;
-
-
 static bno085_t bno;
+static volatile bno085_sample_t bno_result;
 
 static void imu_packet_ready(const bno085_sample_t *s)
 {
-    // tu po prostu wysyłasz “jak leci”
+    // tymczasowo
+	bno_result = *s;
 	UNUSED(s);
 }
-
 
 
 extern volatile uint32_t task_imu_alive;
@@ -66,16 +74,18 @@ void task_imu(void *argument)
 
 	while (1)
 	{
-        // czekamy na EXTI z INT
-        if (osSemaphoreAcquire(imuIntSem, osWaitForever) == osOK) {
-            // BNO może mieć w tym czasie kilka pakietów -> czytaj póki INT nadal low
-            do {
-                bno085_handle_int(&bno, imu_packet_ready);
-                // bardzo krótki yield żeby SPI się wyrobiło
-                osDelay(1);
-            } while (HAL_GPIO_ReadPin(BNO_INT_PORT, BNO_INT_PIN) == GPIO_PIN_RESET);
-        }
-
+		if (osSemaphoreAcquire(imuIntSem, osWaitForever) == osOK) {
+		    imu_dbg.sem_take++;
+//		    do {
+		        HAL_StatusTypeDef st = bno085_handle_int(&bno, imu_packet_ready);
+		        if (st == HAL_OK)
+		        	imu_dbg.spi_read_ok++;
+		        else
+		        	imu_dbg.spi_err++;
+		        imu_dbg.int_state = HAL_GPIO_ReadPin(BNO_INT_PORT, BNO_INT_PIN);
+//		        osDelay(1);
+//		    } while (HAL_GPIO_ReadPin(BNO_INT_PORT, BNO_INT_PIN) == GPIO_PIN_RESET);
+		}
 		task_imu_alive++;
 	}
 }

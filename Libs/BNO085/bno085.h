@@ -41,6 +41,7 @@ typedef struct {
     uint8_t seq[6];   // sekwencje per kanał
     uint8_t rx_buf[BNO_MAX_PACKET_SIZE];
     uint8_t tx_buf[BNO_MAX_PACKET_SIZE];
+    uint8_t tx_dummy_buf[BNO_MAX_PACKET_SIZE];
 } bno085_t;
 
 typedef struct {
@@ -52,6 +53,16 @@ typedef struct {
     uint8_t valid_gyro;
     uint8_t valid_quat;
 } bno085_sample_t;
+
+typedef struct {
+    uint32_t exti_trig;     // zlicza każde wywołanie exti_task_imu_callback()
+    uint32_t sem_give;      // tyle razy osSemaphoreRelease()
+    uint32_t sem_take;      // tyle razy osSemaphoreAcquire() zwróciło OK
+    uint32_t spi_read_ok;   // bno085_handle_int zakończone HAL_OK
+    uint32_t spi_err;       // błędy HAL_ERROR
+    uint32_t total_len;     // ostatnia długość pakietu
+    uint32_t int_state;     // ostatni stan pinu INT
+} imu_debug_t;
 
 HAL_StatusTypeDef bno085_init(bno085_t *dev);
 HAL_StatusTypeDef bno085_handle_int(bno085_t *dev, void (*cb)(const bno085_sample_t*));

@@ -99,7 +99,7 @@ const osThreadAttr_t task_range_meas_attributes = {
 osThreadId_t task_imu_handle;
 const osThreadAttr_t task_imu_attributes = {
   .name = "task_imu",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 osSemaphoreId_t imuIntSem;
@@ -191,6 +191,7 @@ void MX_FREERTOS_Init(void) {
   res = xPortGetFreeHeapSize();
 
   imuIntSem = osSemaphoreNew(8, 0, NULL);
+  res = xPortGetFreeHeapSize();
   task_imu_handle = osThreadNew(task_imu, NULL, &task_imu_attributes);
   res = xPortGetFreeHeapSize();
 
