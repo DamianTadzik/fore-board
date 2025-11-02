@@ -203,6 +203,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	exti_task_range_meas_callback(GPIO_Pin);
 	exti_task_servo_power_monitor_callback(GPIO_Pin);
+	exti_task_imu_callback(GPIO_Pin);
 }
 /* USER CODE END 4 */
 

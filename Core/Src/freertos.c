@@ -102,7 +102,7 @@ const osThreadAttr_t task_imu_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-
+osSemaphoreId_t imuIntSem;
 
 
 /* USER CODE END Variables */
@@ -190,6 +190,7 @@ void MX_FREERTOS_Init(void) {
   task_range_meas_handle = osThreadNew(task_range_meas, NULL, &task_range_meas_attributes);
   res = xPortGetFreeHeapSize();
 
+  imuIntSem = osSemaphoreNew(8, 0, NULL);
   task_imu_handle = osThreadNew(task_imu, NULL, &task_imu_attributes);
   res = xPortGetFreeHeapSize();
 
