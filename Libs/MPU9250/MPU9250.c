@@ -61,10 +61,11 @@ void MPU_REG_WRITE(SPI_HandleTypeDef *SPIx, MPU9250_t *pMPU9250, uint8_t *pAddr,
 /// @param RxSize Size of data buffer
 void MPU_REG_READ(SPI_HandleTypeDef *SPIx, MPU9250_t *pMPU9250, uint8_t addr, uint8_t *pRxData, uint16_t RxSize)
 {
-    MPU_CS(pMPU9250, CS_SELECT);
+	volatile HAL_StatusTypeDef ret;
+	MPU_CS(pMPU9250, CS_SELECT);
     uint8_t writeAddr = addr | READWRITE;
-    HAL_SPI_Transmit(SPIx, &writeAddr, 1, SPI_TIMOUT_MS);
-    HAL_SPI_Receive(SPIx, pRxData, RxSize, SPI_TIMOUT_MS);
+    ret = HAL_SPI_Transmit(SPIx, &writeAddr, 1, SPI_TIMOUT_MS);
+    ret = HAL_SPI_Receive(SPIx, pRxData, RxSize, SPI_TIMOUT_MS);
     MPU_CS(pMPU9250, CS_DESELECT);
 }
 
