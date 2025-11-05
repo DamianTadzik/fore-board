@@ -64,4 +64,3 @@ void task_can_rx(void *argument)
 	}
 }
 
-

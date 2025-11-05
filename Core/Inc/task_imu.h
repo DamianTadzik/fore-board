@@ -10,7 +10,7 @@
 
 #include "main.h"
 
-//void exti_task_imu_callback(uint16_t GPIO_Pin);
+void exti_task_imu_callback(uint16_t GPIO_Pin);
 
 void task_imu(void *argument);
 
