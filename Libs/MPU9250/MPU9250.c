@@ -220,7 +220,7 @@ int16_t MPU_calibrateAcc(SPI_HandleTypeDef *SPIx, MPU9250_t *pMPU9250, uint16_t 
         osDelay(10);  // 100 Hz sampling
     }
 
-    // Average the saved data points to find the gyroscope offset
+    // Average the saved data points to find the accelerometer offset
     return (int16_t)(sum / numCalPoints);
 }
 

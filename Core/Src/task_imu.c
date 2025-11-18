@@ -12,6 +12,8 @@
 
 #include "spi.h"
 #include "MPU9250/MPU9250.h"
+#include "can-not/can_not.h"
+#include "can-messages-mini-celka/src/cmmc.h"
 
 #define IMU_INTERRUPT_FLAG (0x01 << 0)
 
@@ -64,6 +66,8 @@ void task_imu(void *argument)
 		while (1){ osDelay(1000); }
 	}
 
+	// >>> INSERT SELF-TEST HERE <<<
+
 
     // --- PWR_MGMT_2 (0x6C) : enable all gyro and accel axes
     // Bit[5:3] disable gyro XYZ, Bit[2:0] disable accel XYZ
@@ -90,19 +94,19 @@ void task_imu(void *argument)
     val  = 0x01;
     MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &val);
 
-    // --- GYRO_CONFIG (0x1B) : full-scale range ±500 °/s
-    // Bits[4:3] = 01 → 500 °/s  (LSB sensitivity = 65.5 LSB/°/s)
+    // --- GYRO_CONFIG (0x1B) : full-scale range ±2000 °/s
+    // Bits[4:3] = 11 → 2000 °/s  (LSB sensitivity = 16.4 LSB/°/s)
     // Bit[7] XG_ST, Bit[6] YG_ST, Bit[5] ZG_ST = 0 → self-test off
     // Bits[1:0] FCHOICE_B = 00 → DLPF enabled (we use CONFIG’s DLPF)
     addr = GYRO_CONFIG;
-    val  = 0x08;
+    val  = 0x18;
     MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &val);
 
-    // --- ACCEL_CONFIG (0x1C) : full-scale range ±4 g
-    // Bits[4:3] = 01 → 4 g  (LSB sensitivity = 8192 LSB/g)
+    // --- ACCEL_CONFIG (0x1C) : full-scale range ±2 g
+    // Bits[4:3] = 00 → 2 g  (LSB sensitivity = 16384 LSB/g)
     // Self-test bits [7:5] = 0, so normal operation.
     addr = ACCEL_CONFIG;
-    val  = 0x08;
+    val  = 0x00;
     MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &val);
 
     // --- ACCEL_CONFIG2 (0x1D) : accel DLPF bandwidth
@@ -144,15 +148,15 @@ void task_imu(void *argument)
     }
     else
     {
-        MPU9250.gyroOffs.x = -11;
-        MPU9250.gyroOffs.y = 89;
-        MPU9250.gyroOffs.z = -304;
+        MPU9250.gyroOffs.x = -36; // -36 -37
+        MPU9250.gyroOffs.y = 22;  // 24 20
+        MPU9250.gyroOffs.z = -11; // -11 -11
 
         // ---------------------------------------------------------------------
         // The datasheet defines that the user gyro offset registers (XG/YG/ZG_OFFSET)
         // are scaled internally by:
         //      OffsetLSB = X_OFFS_USR * 4 / 2^FS_SEL
-        // For FS_SEL = 1 (±500 °/s full-scale) → divide by 2.
+        // For FS_SEL = 3 (±2000 °/s full-scale) → multiply by 2.
         // ---------------------------------------------------------------------
 
         volatile uint8_t write_gyro_offset_to_registers = 1;
@@ -160,9 +164,9 @@ void task_imu(void *argument)
         {
         	uint8_t data;
 
-        	int16_t offsx = -(MPU9250.gyroOffs.x / 2);
-        	int16_t offsy = -(MPU9250.gyroOffs.y / 2);
-        	int16_t offsz = -(MPU9250.gyroOffs.z / 2);
+        	int16_t offsx = -(MPU9250.gyroOffs.x * 2);
+        	int16_t offsy = -(MPU9250.gyroOffs.y * 2);
+        	int16_t offsz = -(MPU9250.gyroOffs.z * 2);
 
 			// X axis
 			addr = XG_OFFSET_H;
@@ -204,7 +208,7 @@ void task_imu(void *argument)
     	MPU9250.accOffs.z = 0;
 
     	// Step with debugger through following functions, each time place IMU on the correct face
-    	int16_t pos, neg;
+    	volatile int16_t pos, neg;
 
     	pos = MPU_calibrateAcc(&hspi1, &MPU9250, 1<<11, &MPU9250.rawData.ax); // X+
     	neg = MPU_calibrateAcc(&hspi1, &MPU9250, 1<<11, &MPU9250.rawData.ax); // X-
@@ -220,56 +224,93 @@ void task_imu(void *argument)
     }
     else
     {
-    	MPU9250.accOffs.x = 250;
-    	MPU9250.accOffs.y = 60;
-    	MPU9250.accOffs.z = 1200; // TODO
+    	MPU9250.accOffs.x = 340;	// 338 344 337
+    	MPU9250.accOffs.y = 320;	// 321 317 321
+    	MPU9250.accOffs.z = 2746;	// 2781 2739 2717
 
-        volatile uint8_t write_acc_offset_to_registers = 0;
+        volatile uint8_t write_acc_offset_to_registers = 1;
         if (write_acc_offset_to_registers)
         {
-        	uint8_t data;
+            int16_t offsx = -(MPU9250.accOffs.x / 16);
+            int16_t offsy = -(MPU9250.accOffs.y / 16);
+            int16_t offsz = -(MPU9250.accOffs.z / 16);
 
-        	int16_t offsx = -(MPU9250.accOffs.x / 128);
-        	int16_t offsy = -(MPU9250.accOffs.y / 128);
-        	int16_t offsz = -(MPU9250.accOffs.z / 128);
+            // ---------------------------------------------------------------------
+            // The datasheet defines that the accelerometer user offset registers
+            // (XA/YA/ZA_OFFS) store a signed 15-bit value, where 1 LSB is ~0.98 mg.
+            //
+            // Since the sensor outputs are in raw counts (16384 LSB/g at ±2 g),
+            // one hardware offset step corresponds to roughly (0.00098 g * 16384)=16 raw counts.
+            //
+            //     offset_register_value = –(raw / 16)
+            //
+            // The resulting 15-bit value is split as follows:
+            //     High byte  = offset_register_value[14:7]
+            //     Low byte   = offset_register_value[6:0] << 1   (bit 0 is reserved and kept 0)
+            // ---------------------------------------------------------------------
 
-        	// ---------------------------------------------------------------------
-        	// The datasheet defines that the accelerometer user offset registers
-        	// (XA/YA/ZA_OFFS) store a signed 15-bit value (1 LSB = 2⁻⁶ g = 0.015625 g).
-        	//
-        	// Since the sensor outputs are in raw counts (8192 LSB/g at ±4 g),
-        	// each hardware offset step corresponds to roughly (8192/64)=128 raw counts.
-        	//
-        	//     offset_register_value = –(raw / 128)
-        	//
-        	// The resulting 15-bit value is split as follows:
-        	//     High byte  = offset_reg[14:7]
-        	//     Low byte   = offset_reg[6:0] << 1   (bit 0 is reserved and kept 0)
-        	// ---------------------------------------------------------------------
+        	uint8_t high, low, reserved_bit;
+        	uint16_t reg, offs_reg;
 
-			// X axis
-			addr = XA_OFFSET_H;
-			data = (uint8_t)(offsx >> 7) & 0xFF;
-			MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &data);
-			addr = XA_OFFSET_L;
-			data = (uint8_t)(offsx << 1) & 0xFE;
-			MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &data);
+        	// X axis read
+            MPU_REG_READ(&hspi1, &MPU9250, XA_OFFSET_H, &high, 1);
+            MPU_REG_READ(&hspi1, &MPU9250, XA_OFFSET_L, &low, 1);
+            // reconstruct the register
+            reg = (int16_t)((high << 8) | low);
+            // get the offset and reserved bit from register
+            reserved_bit = reg & 0x01;
+            offs_reg = reg >> 1;
+            // add offset to the register
+            offs_reg = offs_reg + offsx;
+            // reconstruct the register
+            reg = (offs_reg << 1) | reserved_bit;
+            // X axis write
+            addr = XA_OFFSET_H;
+            high = (uint8_t)(reg >> 8);
+            MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &high);
+            addr = XA_OFFSET_L;
+            low = (uint8_t)(reg);
+            MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &low);
 
-			// Y axis
-			addr = YA_OFFSET_H;
-			data = (uint8_t)(offsy >> 7) & 0xFF;
-			MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &data);
-			addr = YA_OFFSET_L;
-			data = (uint8_t)(offsy << 1) & 0xFE;
-			MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &data);
+        	// Y axis read
+            MPU_REG_READ(&hspi1, &MPU9250, YA_OFFSET_H, &high, 1);
+            MPU_REG_READ(&hspi1, &MPU9250, YA_OFFSET_L, &low, 1);
+            // reconstruct the register
+            reg = (int16_t)((high << 8) | low);
+            // get the offset and reserved bit from register
+            reserved_bit = reg & 0x01;
+            offs_reg = reg >> 1;
+            // add offset to the register
+            offs_reg = offs_reg + offsy;
+            // reconstruct the register
+            reg = (offs_reg << 1) | reserved_bit;
+            // X axis write
+            addr = YA_OFFSET_H;
+            high = (uint8_t)(reg >> 8);
+            MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &high);
+            addr = YA_OFFSET_L;
+            low = (uint8_t)(reg);
+            MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &low);
 
-			// Z axis
-			addr = ZA_OFFSET_H;
-			data = (uint8_t)(offsz >> 7) & 0xFF;
-			MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &data);
-			addr = ZA_OFFSET_L;
-			data = (uint8_t)(offsz << 1) & 0xFE;
-			MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &data);
+        	// Z axis read
+            MPU_REG_READ(&hspi1, &MPU9250, ZA_OFFSET_H, &high, 1);
+            MPU_REG_READ(&hspi1, &MPU9250, ZA_OFFSET_L, &low, 1);
+            // reconstruct the register
+            reg = (int16_t)((high << 8) | low);
+            // get the offset and reserved bit from register
+            reserved_bit = reg & 0x01;
+            offs_reg = reg >> 1;
+            // add offset to the register
+            offs_reg = offs_reg + offsz;
+            // reconstruct the register
+            reg = (offs_reg << 1) | reserved_bit;
+            // X axis write
+            addr = ZA_OFFSET_H;
+            high = (uint8_t)(reg >> 8);
+            MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &high);
+            addr = ZA_OFFSET_L;
+            low = (uint8_t)(reg);
+            MPU_REG_WRITE(&hspi1, &MPU9250, &addr, &low);
 
         	// Do not compensate in the software then
         	MPU9250.accOffs.x = 0;
@@ -289,9 +330,36 @@ void task_imu(void *argument)
 		{
 			MPU_readRawData(&hspi1, &MPU9250);
 
-			// TODO add can pack and send
-		}
+			{
+				struct cmmc_accelerometer_t tmp = {
+						.ax = MPU9250.rawData.ax, // do not use encode here
+						.ay = MPU9250.rawData.ay, // do not use encode here
+						.az = MPU9250.rawData.az, // do not use encode here
+				};
+				cant_generic_struct_t msg = {
+						.msg_dlc	= CMMC_ACCELEROMETER_LENGTH,
+						.msg_id		= CMMC_ACCELEROMETER_FRAME_ID,
+						.msg_payload = { 0U },
+				};
+				cmmc_accelerometer_pack(msg.msg_payload, &tmp, msg.msg_dlc);
+				cant_transmit(&msg);
+			}
 
+			{
+				struct cmmc_gyroscope_t tmp = {
+						.gx = MPU9250.rawData.gx, // do not use encode here
+						.gy = MPU9250.rawData.gy, // do not use encode here
+						.gz = MPU9250.rawData.gz, // do not use encode here
+				};
+				cant_generic_struct_t msg = {
+						.msg_dlc	= CMMC_GYROSCOPE_LENGTH,
+						.msg_id		= CMMC_GYROSCOPE_FRAME_ID,
+						.msg_payload = { 0U },
+				};
+				cmmc_gyroscope_pack(msg.msg_payload, &tmp, msg.msg_dlc);
+				cant_transmit(&msg);
+			}
+		}
 		task_imu_alive++;
 	}
 }
