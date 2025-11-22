@@ -19,7 +19,7 @@ typedef enum {
 typedef enum {
 	MANUAL_RADIO,
 	MANUAL_CONTROLLER,
-	MANUAL_AUTO,
+	AUTO_CONTROLLER,
 } mode_switch_t;
 
 typedef struct {
@@ -35,9 +35,9 @@ typedef struct {
 } radio_controls_t;
 
 typedef struct {
-	float front_left_angle;
-	float front_right_angle;
-	float rear_angle;
+	float front_left_angle_sp;
+	float front_right_angle_sp;
+	float rear_angle_sp;
 } auto_control_t;
 
 typedef struct {
