@@ -17,9 +17,9 @@ typedef enum {
 } arm_switch_t;
 
 typedef enum {
-	To,
-	Be,
-	Done,
+	MANUAL_RADIO,
+	MANUAL_CONTROLLER,
+	MANUAL_AUTO,
 } mode_switch_t;
 
 typedef struct {
@@ -33,6 +33,12 @@ typedef struct {
 	arm_switch_t arm_switch;
 	mode_switch_t mode_switch;
 } radio_controls_t;
+
+typedef struct {
+	float front_left_angle;
+	float front_right_angle;
+	float rear_angle;
+} auto_control_t;
 
 typedef struct {
 	float voltage;
@@ -64,6 +70,8 @@ typedef struct {
 	range_meas_t right_tof;
 
 	radio_controls_t from_radio;
+
+	auto_control_t from_controller;
 } fore_board_t;
 
 void fore_board_init(void);

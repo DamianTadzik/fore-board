@@ -37,6 +37,7 @@
 
 #include "task_range_meas.h"
 #include "task_servo_power_monitor.h"
+#include "task_imu.h"
 
 /* USER CODE END Includes */
 

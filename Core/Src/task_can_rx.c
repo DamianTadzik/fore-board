@@ -39,6 +39,7 @@ void task_can_rx(void *argument)
 //				break;
 
 			case CMMC_RADIO_CONTROL_FRAME_ID:
+			{
 				struct cmmc_radio_control_t tmp = { 0 };
 				cmmc_radio_control_unpack(&tmp, msg.msg_payload, CMMC_RADIO_CONTROL_LENGTH);
 
@@ -53,7 +54,19 @@ void task_can_rx(void *argument)
 
 				g_can_messages_decoded++;
 				break;
+			}
+			case CMMC_AUTO_CONTROL_FRAME_ID:
+			{
+				struct cmmc_auto_control_t tmp = { 0 };
+				cmmc_auto_control_unpack(&tmp, msg.msg_payload, CMMC_AUTO_CONTROL_LENGTH);
 
+				fb_ptr->from_controller.front_left_angle = cmmc_auto_control_front_left_setpoint_decode(tmp.front_left_setpoint);
+				fb_ptr->from_controller.front_right_angle = cmmc_auto_control_front_right_setpoint_decode(tmp.front_right_setpoint);
+				fb_ptr->from_controller.rear_angle = cmmc_auto_control_rear_setpoint_decode(tmp.rear_setpoint);
+
+				g_can_messages_decoded++;
+				break;
+			}
 			default:
 				break;
 			}
