@@ -320,8 +320,7 @@ void task_imu(void *argument)
     }
 
     // Load the DMP into the MPU memory
-
-
+    // maybe todo
 
 	while (1)
 	{
@@ -330,11 +329,13 @@ void task_imu(void *argument)
 		{
 			MPU_readRawData(&hspi1, &MPU9250);
 
+			// Flipping all raw measurements due the fact that i've mounted the IMU in the negated NED position and i want to have NED in CAN
+
 			{
 				struct cmmc_accelerometer_t tmp = {
-						.ax = MPU9250.rawData.ax, // do not use encode here
-						.ay = MPU9250.rawData.ay, // do not use encode here
-						.az = MPU9250.rawData.az, // do not use encode here
+						.ax = -MPU9250.rawData.ax, // do not use encode here
+						.ay = -MPU9250.rawData.ay, // do not use encode here
+						.az = -MPU9250.rawData.az, // do not use encode here
 				};
 				cant_generic_struct_t msg = {
 						.msg_dlc	= CMMC_ACCELEROMETER_LENGTH,
@@ -347,9 +348,9 @@ void task_imu(void *argument)
 
 			{
 				struct cmmc_gyroscope_t tmp = {
-						.gx = MPU9250.rawData.gx, // do not use encode here
-						.gy = MPU9250.rawData.gy, // do not use encode here
-						.gz = MPU9250.rawData.gz, // do not use encode here
+						.gx = -MPU9250.rawData.gx, // do not use encode here
+						.gy = -MPU9250.rawData.gy, // do not use encode here
+						.gz = -MPU9250.rawData.gz, // do not use encode here
 				};
 				cant_generic_struct_t msg = {
 						.msg_dlc	= CMMC_GYROSCOPE_LENGTH,
