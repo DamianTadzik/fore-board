@@ -46,8 +46,8 @@ actuator_t right_foil_actuator = {
 				.setpoint_lower_bound = 1000,
 				.setpoint_upper_bound = 2000,
 		},
-		.calibrated_setpoint_lower_bound = 1326,
-		.calibrated_setpoint_upper_bound = 1608,
+		.calibrated_setpoint_lower_bound = 1326-2, //1326
+		.calibrated_setpoint_upper_bound = 1608-18-2,//1590 264
 };
 actuator_t left_foil_actuator = {
 		.prev_state = ACTUATOR_OFF,
@@ -58,8 +58,8 @@ actuator_t left_foil_actuator = {
 				.setpoint_lower_bound = 1000,
 				.setpoint_upper_bound = 2000,
 		},
-		.calibrated_setpoint_lower_bound = 1434,
-		.calibrated_setpoint_upper_bound = 1691,
+		.calibrated_setpoint_lower_bound = 1434-2,
+		.calibrated_setpoint_upper_bound = 1691-1, //258
 };
 
 // FT1117M 120* for range 900 to 2100 that gives 120/(2100-900) = 120 / 1200 = 1/10
@@ -90,6 +90,13 @@ static inline int16_t map_i16(int16_t x,
     return (int16_t)(out_min + num / denom);
 }
 
+static inline float map_f(float x,
+                         float in_min,  float in_max,
+                         float out_min, float out_max)
+{
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min)
+           + out_min;
+}
 
 static void actuator_set_setpoint(actuator_t *hact, int16_t requested_setpoint)
 {
@@ -411,46 +418,49 @@ void task_servo_control(void* argument)
 	while (1)
 	{
 		/* Obtain control signals from CAN/RADIO */
-		// Joystick inputs (int16_t) in range [-1000, 1000]
-		int16_t roll  = fb_ptr->from_radio.front_roll_sp;
-		int16_t pitch = fb_ptr->from_radio.front_pitch_sp;
+		int16_t left_sp;
+		int16_t right_sp;
 
-		// Wzmocnienia
-		int16_t gain_pitch = 1000;
-		int16_t gain_roll  = 1000;
+		if (fb_ptr->from_radio.mode_switch == MANUAL_RADIO)
+		{
+			// Joystick inputs (int16_t) in range [-1000, 1000]
+			int16_t roll  = fb_ptr->from_radio.front_roll_sp;
+			int16_t pitch = fb_ptr->from_radio.front_pitch_sp;
 
-		// left = pitch + roll
-		// right = pitch - roll
-		int16_t left_cmd  = (gain_pitch * pitch + gain_roll * roll) / 1000;
-		int16_t right_cmd = (gain_pitch * pitch - gain_roll * roll) / 1000;
+			// Wzmocnienia
+			int16_t gain_pitch = 1000;
+			int16_t gain_roll  = 1000;
 
-		// saturacja
-		if (left_cmd > 1000) left_cmd = 1000;
-		else if (left_cmd < -1000) left_cmd = -1000;
-		if (right_cmd > 1000) right_cmd = 1000;
-		else if (right_cmd < -1000) right_cmd = -1000;
+			// left = pitch + roll
+			// right = pitch - roll
+			int16_t left_cmd  = (gain_pitch * pitch + gain_roll * roll) / 1000;
+			int16_t right_cmd = (gain_pitch * pitch - gain_roll * roll) / 1000;
 
-		// skalowanie
-		int16_t left_sp = map_i16(left_cmd, -1000, 1000,
-				left_foil_actuator.calibrated_setpoint_lower_bound,
-				left_foil_actuator.calibrated_setpoint_upper_bound);
-		int16_t right_sp = map_i16(-right_cmd, -1000, 1000,
-				right_foil_actuator.calibrated_setpoint_lower_bound,
-				right_foil_actuator.calibrated_setpoint_upper_bound);
+			// saturacja
+			if (left_cmd > 1000) left_cmd = 1000;
+			else if (left_cmd < -1000) left_cmd = -1000;
+			if (right_cmd > 1000) right_cmd = 1000;
+			else if (right_cmd < -1000) right_cmd = -1000;
 
-//		/* Setpoint source selection based on the radio switch */ TO BE DONE
-//		if (fb_ptr->from_radio.mode_switch == MODE_RC_CONTROL)
-//		{
-//
-//		}
-//		else if (fb_ptr->from_radio.mode_switch == MODE_RC_CONTROL)
-//		{
-//
-//		}
-//		else if (fb_ptr->from_radio.mode_switch == MODE_RC_CONTROL)
-//		{
-//
-//		}
+			// skalowanie
+			left_sp = map_i16(left_cmd, -1000, 1000,
+					left_foil_actuator.calibrated_setpoint_lower_bound,
+					left_foil_actuator.calibrated_setpoint_upper_bound);
+			right_sp = map_i16(-right_cmd, -1000, 1000,
+					right_foil_actuator.calibrated_setpoint_lower_bound,
+					right_foil_actuator.calibrated_setpoint_upper_bound);
+		}
+		else if (fb_ptr->from_radio.mode_switch == MANUAL_CONTROLLER || fb_ptr->from_radio.mode_switch == AUTO_CONTROLLER)
+		{
+			left_sp = map_f(fb_ptr->from_controller.front_left_angle_sp,
+							-6.0, 12.0,
+							left_foil_actuator.calibrated_setpoint_lower_bound,
+							left_foil_actuator.calibrated_setpoint_upper_bound);
+			right_sp = map_f(fb_ptr->from_controller.front_right_angle_sp,
+							 -6.0, 12.0,
+							 right_foil_actuator.calibrated_setpoint_upper_bound,
+							 right_foil_actuator.calibrated_setpoint_lower_bound);
+		}
 
 		/* Obtain the control from the radio */
 		if (fb_ptr->from_radio.arm_switch == ARMED_ALL)
