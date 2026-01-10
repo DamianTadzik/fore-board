@@ -348,9 +348,9 @@ void task_imu(void *argument)
 
 			{
 				struct cmmc_gyroscope_t tmp = {
-						.gx = -MPU9250.rawData.gx, // do not use encode here
-						.gy = -MPU9250.rawData.gy, // do not use encode here
-						.gz = -MPU9250.rawData.gz, // do not use encode here
+						.gx = MPU9250.rawData.gx, // do not use encode here
+						.gy = MPU9250.rawData.gy, // do not use encode here
+						.gz = MPU9250.rawData.gz, // do not use encode here
 				};
 				cant_generic_struct_t msg = {
 						.msg_dlc	= CMMC_GYROSCOPE_LENGTH,
