@@ -69,9 +69,67 @@ static void send_actuator_right_foil_feedback(fore_board_t* fb_ptr)
 	cant_transmit(&msg);
 }
 
-static uint32_t distance_fore_feedback_message_period = 10; // centy seconds (10cs is 100ms)
-static uint32_t actuator_left_foil_feedback_message_period = 10;
-static uint32_t actuator_right_foil_feedback_message_period = 10;
+static void send_gps_motion(fore_board_t* fb_ptr)
+{
+	struct cmmc_gps_motion_t tmp = {
+			.ground_speed = fb_ptr->gnss_info.gSpeed_mms, 	// do not use encode here
+			.heading = fb_ptr->gnss_info.headMot_deg1e5,	// do not use encode here
+			.speed_accuracy_estimate = fb_ptr->gnss_info.sAcc_mms * 10.0, // do not use encode here custom encode
+			.heading_accuracy_estimate = fb_ptr->gnss_info.headAcc_deg1e5 * 1000.0, // do not use encode here custom encode
+	};
+	cant_generic_struct_t msg = {
+			.msg_dlc	= CMMC_GPS_MOTION_LENGTH,
+			.msg_id		= CMMC_GPS_MOTION_FRAME_ID,
+			.msg_payload = { 0U },
+	};
+	cmmc_gps_motion_pack(msg.msg_payload, &tmp, msg.msg_dlc);
+	cant_transmit(&msg);
+}
+
+static void send_gps_position(fore_board_t* fb_ptr)
+{
+	struct cmmc_gps_position_t tmp = {
+			.latitude = fb_ptr->gnss_info.lat, // do not use encode here
+			.longitude = fb_ptr->gnss_info.lon, // do not use encode here
+	};
+	cant_generic_struct_t msg = {
+			.msg_dlc	= CMMC_GPS_POSITION_LENGTH,
+			.msg_id		= CMMC_GPS_POSITION_FRAME_ID,
+			.msg_payload = { 0U },
+	};
+	cmmc_gps_position_pack(msg.msg_payload, &tmp, msg.msg_dlc);
+	cant_transmit(&msg);
+}
+
+static void send_gps_time_status(fore_board_t* fb_ptr)
+{
+	struct cmmc_gps_time_status_t tmp = {
+			.year = cmmc_gps_time_status_year_encode(fb_ptr->gnss_info.year),
+			.month = cmmc_gps_time_status_month_encode(fb_ptr->gnss_info.month),
+			.day = cmmc_gps_time_status_day_encode(fb_ptr->gnss_info.day),
+			.hour = cmmc_gps_time_status_hour_encode(fb_ptr->gnss_info.hour),
+			.min = cmmc_gps_time_status_min_encode(fb_ptr->gnss_info.min),
+			.sec = cmmc_gps_time_status_sec_encode(fb_ptr->gnss_info.sec),
+			.valid = cmmc_gps_time_status_valid_encode(fb_ptr->gnss_info.valid),
+			.fix_type = cmmc_gps_time_status_fix_type_encode(fb_ptr->gnss_info.fixType),
+			.num_sv = cmmc_gps_time_status_num_sv_encode(fb_ptr->gnss_info.numSV),
+	};
+	cant_generic_struct_t msg = {
+			.msg_dlc	= CMMC_GPS_TIME_STATUS_LENGTH,
+			.msg_id		= CMMC_GPS_TIME_STATUS_FRAME_ID,
+			.msg_payload = { 0U },
+	};
+	cmmc_gps_time_status_pack(msg.msg_payload, &tmp, msg.msg_dlc);
+	cant_transmit(&msg);
+}
+
+const static uint32_t distance_fore_feedback_message_period = 10; // centy seconds (10cs is 100ms)
+const static uint32_t actuator_left_foil_feedback_message_period = 10;
+const static uint32_t actuator_right_foil_feedback_message_period = 10;
+
+const static uint32_t gps_motion_message_period = 10;
+const static uint32_t gps_position_message_period = 100;
+const static uint32_t gps_time_status_message_period = 100;
 
 extern volatile uint32_t task_can_tx_alive;
 void task_can_tx(void *argument)
@@ -81,6 +139,10 @@ void task_can_tx(void *argument)
 	uint32_t distance_fore_feedback_message_counter = 0;
 	uint32_t actuator_left_foil_feedback_message_counter = 0;
 	uint32_t actuator_right_foil_feedback_message_counter = 0;
+
+	uint32_t gps_motion_message_counter = 5;
+	uint32_t gps_position_message_counter = 5;
+	uint32_t gps_time_status_message_counter = 5;
 
 	while (1)
 	{
@@ -101,6 +163,24 @@ void task_can_tx(void *argument)
 			actuator_right_foil_feedback_message_counter = 0;
 			send_actuator_right_foil_feedback(fb_ptr);
 		}
+
+		if (++gps_motion_message_counter >= gps_motion_message_period)
+		{
+			gps_motion_message_counter = 0;
+			send_gps_motion(fb_ptr);
+		}
+
+	    if (++gps_position_message_counter >= gps_position_message_period)
+	    {
+	        gps_position_message_counter = 0;
+	        send_gps_position(fb_ptr);
+	    }
+
+	    if (++gps_time_status_message_counter >= gps_time_status_message_period)
+	    {
+	        gps_time_status_message_counter = 0;
+	        send_gps_time_status(fb_ptr);
+	    }
 
 		task_can_tx_alive++;
 		osDelay(10);
