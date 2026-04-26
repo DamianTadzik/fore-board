@@ -34,6 +34,7 @@
 #include "task_servo_power_monitor.h"
 #include "task_range_meas.h"
 #include "task_imu.h"
+#include "task_gps.h"
 
 /* USER CODE END Includes */
 
@@ -104,6 +105,12 @@ const osThreadAttr_t task_imu_attributes = {
 };
 osSemaphoreId_t imuIntSem;
 
+osThreadId_t task_gps_handle;
+const osThreadAttr_t task_gps_attributes = {
+  .name = "task_gps",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -195,6 +202,9 @@ void MX_FREERTOS_Init(void) {
   task_imu_handle = osThreadNew(task_imu, NULL, &task_imu_attributes);
   res = xPortGetFreeHeapSize();
 
+  task_gps_handle = osThreadNew(task_gps, NULL, &task_gps_attributes);
+  res = xPortGetFreeHeapSize();
+
   UNUSED(res);
   /* USER CODE END RTOS_THREADS */
 
@@ -219,6 +229,7 @@ volatile uint32_t task_servo_control_alive;
 volatile uint32_t task_servo_power_monitor_alive;
 volatile uint32_t task_range_meas_alive;
 volatile uint32_t task_imu_alive;
+volatile uint32_t task_gps_alive;
 
 volatile UBaseType_t task_can_rx_high_watermark;
 volatile UBaseType_t task_can_tx_high_watermark;
@@ -227,6 +238,7 @@ volatile UBaseType_t task_servo_control_high_watermark;
 volatile UBaseType_t task_servo_power_monitor_high_watermark;
 volatile UBaseType_t task_range_meas_high_watermark;
 volatile UBaseType_t task_imu_high_watermark;
+volatile UBaseType_t task_gps_high_watermark;
 
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
@@ -244,6 +256,7 @@ void StartDefaultTask(void *argument)
 	  task_servo_power_monitor_high_watermark = uxTaskGetStackHighWaterMark((TaskHandle_t)task_servo_power_monitor_handle);
 	  task_range_meas_high_watermark    = uxTaskGetStackHighWaterMark((TaskHandle_t)task_range_meas_handle);
 	  task_imu_high_watermark       	= uxTaskGetStackHighWaterMark((TaskHandle_t)task_imu_handle);
+	  task_gps_high_watermark			= uxTaskGetStackHighWaterMark((TaskHandle_t)task_gps_handle);
 
 	  osDelay(200);
   }

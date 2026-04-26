@@ -25,6 +25,7 @@
 #include "i2c.h"
 #include "spi.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -110,6 +111,7 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM3_Init();
   MX_SPI1_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   fore_board_init();
   cant_main_init();
@@ -120,7 +122,7 @@ int main(void)
   HAL_GPIO_WritePin(GPIO_LED_GPIO_Port, GPIO_LED_Pin, GPIO_PIN_RESET);
   while (HAL_GPIO_ReadPin(GPIO_KEY_GPIO_Port, GPIO_KEY_Pin) == GPIO_PIN_RESET)
   {
-	  /* Increase counter each milisecond */
+	  /* Increase counter each millisecond */
 	  startup_counter++;
 	  HAL_Delay(1);
 
